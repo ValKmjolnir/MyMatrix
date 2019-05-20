@@ -115,7 +115,7 @@ class Matrix
 				return Temp;
 			}
 		}
-		void operator=(const Matrix<__T> &B)
+		Matrix &operator=(const Matrix<__T> &B)
 		{
 			if(num!=NULL)
 			{
@@ -136,6 +136,7 @@ class Matrix
 			}
 			else
 				num=NULL;
+			return *this;
 		}
 		template<typename T>
 		friend std::ostream &operator<<(std::ostream &strm,Matrix<T> &B);
