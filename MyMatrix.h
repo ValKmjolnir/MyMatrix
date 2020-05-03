@@ -22,8 +22,8 @@ public:
 	Matrix  operator* (const Matrix<__T>&);
 	Matrix& operator= (const Matrix<__T>&);
 	__T*    operator[](const int);
-	Matrix  Hadamard  (const Matrix<__T>&,const Matrix<__T>&);
-	Matrix  Transpose (const Matrix<__T>&);
+	Matrix  Hadamard  (const Matrix<__T>&);
+	Matrix  Transpose ();
 	template<typename T> friend std::ostream& operator<<(std::ostream&,const Matrix<T>&);
 	template<typename T> friend std::istream& operator>>(std::istream&,const Matrix<T>&);
 };
@@ -125,7 +125,7 @@ template<typename __T>
 Matrix<__T> Matrix<__T>::operator*(const Matrix<__T>& B)
 {
 	Matrix<__T> NullMatrix(0,0);
-	if(this->row==0||this->col==0||B.row==0||B.col==0)
+	if(!this->row || !this->col|| !B.row|| !B.col)
 	{
 		std::string WarningInformation="No matching matrix";
 		throw WarningInformation;
@@ -188,37 +188,37 @@ __T* Matrix<__T>::operator[](const int addr)
 }
 
 template<typename __T>
-Matrix<__T> Matrix<__T>::Hadamard(const Matrix<__T>& A,const Matrix<__T>& B)
+Matrix<__T> Matrix<__T>::Hadamard(const Matrix<__T>& B)
 {
 	Matrix<__T> NullMatrix(0,0);
-	if(!A.row || !A.col || !B.row || !B.col)
+	if(!this->row || !this->col || !B.row || !B.col)
 	{
 		std::string WarningInformation="No matching matrix";
 		throw WarningInformation;
 	}
-	else if(A.row!=B.row||A.col!=B.col)
+	else if(this->row!=B.row || this->col!=B.col)
 	{
 		std::string WarningInformation="No matching matrix";
 		throw WarningInformation;
 	}
 	else
 	{
-		Matrix<__T> Temp(A.row,A.col);
-		for(int i=0;i<A.row;++i)
-			for(int j=0;j<A.col;++j)
-				Temp.num[i][j]=A.num[i][j]*B.num[i][j];
-		return Temp;
+		Matrix<__T> temp(this->row,this->col);
+		for(int i=0;i<this->row;++i)
+			for(int j=0;j<this->col;++j)
+				temp.num[i][j]=this->num[i][j]*B.num[i][j];
+		return temp;
 	}
 	return NullMatrix;
 }
 
 template<typename __T>
-Matrix<__T> Matrix<__T>::Transpose(const Matrix<__T>& B)
+Matrix<__T> Matrix<__T>::Transpose()
 {
-	Matrix<__T> temp(B.col,B.row);
-	for(int i=0;i<B.row;++i)
-		for(int j=0;j<B.col;++j)
-			temp.num[j][i]=B.num[i][j];
+	Matrix<__T> temp(this->col,this->row);
+	for(int i=0;i<this->row;++i)
+		for(int j=0;j<this->col;++j)
+			temp.num[j][i]=this->num[i][j];
 	return temp;
 }
 
