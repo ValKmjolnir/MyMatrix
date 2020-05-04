@@ -78,7 +78,7 @@ Matrix<__T>::~Matrix()
 	{
 		for(int i=0;i<row;++i)
 			delete[] num[i];
-		delete num;
+		delete[] num;
 	}
 	return;
 }
