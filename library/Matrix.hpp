@@ -1,4 +1,4 @@
-/* By ValKmjolnir 2020/5/3                        */
+/* matrix.hpp By ValKmjolnir 2020/5/3             */
 /* Rewrite by ValKmjolnir 2022/11/16              */
 /* Updated by ValKmjolnir 2025/01/19              */
 
@@ -14,40 +14,40 @@
 #include <cstdlib>
 
 template<typename T>
-class Matrix {
+class matrix {
 private:
     size_t row;
     size_t col;
     T* num;
 
 public:
-    Matrix(const size_t, const size_t);
-    Matrix(const Matrix<T>&);
-    ~Matrix();
+    matrix(const size_t, const size_t);
+    matrix(const matrix<T>&);
+    ~matrix();
 
 public:
-    Matrix  operator+ (const Matrix<T>&);
-    Matrix  operator- (const Matrix<T>&);
-    Matrix  operator* (const Matrix<T>&);
-    Matrix& operator= (const Matrix<T>&);
+    matrix  operator+ (const matrix<T>&);
+    matrix  operator- (const matrix<T>&);
+    matrix  operator* (const matrix<T>&);
+    matrix& operator= (const matrix<T>&);
     T*      operator[](const size_t);
-    Matrix  hadamard  (const Matrix<T>&);
-    Matrix  transpose ();
-    Matrix  no_parallel_mult(const Matrix<T>&);
+    matrix  hadamard  (const matrix<T>&);
+    matrix  transpose ();
+    matrix  no_parallel_mult(const matrix<T>&);
 
 public:
     void random_init();
 
 public:
     template<typename _T>
-    friend std::ostream& operator<<(std::ostream&, const Matrix<_T>&);
+    friend std::ostream& operator<<(std::ostream&, const matrix<_T>&);
     
     template<typename _T>
-    friend std::istream& operator>>(std::istream&, const Matrix<_T>&);
+    friend std::istream& operator>>(std::istream&, const matrix<_T>&);
 };
 
 template<typename T>
-Matrix<T>::Matrix(const size_t __row, const size_t __col) {
+matrix<T>::matrix(const size_t __row, const size_t __col) {
     row = __row;
     col = __col;
     if (row > 0 && col > 0) {
@@ -61,7 +61,7 @@ Matrix<T>::Matrix(const size_t __row, const size_t __col) {
 }
 
 template<typename T>
-Matrix<T>::Matrix(const Matrix<T>& Temp) {
+matrix<T>::matrix(const matrix<T>& Temp) {
     row = Temp.row;
     col = Temp.col;
     if (row > 0 && col > 0) {
@@ -78,7 +78,7 @@ Matrix<T>::Matrix(const Matrix<T>& Temp) {
 }
 
 template<typename T>
-Matrix<T>::~Matrix() {
+matrix<T>::~matrix() {
     if (num) {
         delete[] num;
     }
@@ -86,7 +86,7 @@ Matrix<T>::~Matrix() {
 }
 
 template<typename T>
-Matrix<T> Matrix<T>::operator+(const Matrix<T>& B) {
+matrix<T> matrix<T>::operator+(const matrix<T>& B) {
     if (this->row == B.row && this->col==B.col) {
         auto Temp = *this;
         #pragma omp parallel for
@@ -99,7 +99,7 @@ Matrix<T> Matrix<T>::operator+(const Matrix<T>& B) {
 }
 
 template<typename T>
-Matrix<T> Matrix<T>::operator-(const Matrix<T>& B) {
+matrix<T> matrix<T>::operator-(const matrix<T>& B) {
     if (this->row == B.row && this->col == B.col) {
         auto Temp = *this;
         #pragma omp parallel for
@@ -112,14 +112,14 @@ Matrix<T> Matrix<T>::operator-(const Matrix<T>& B) {
 }
 
 template<typename T>
-Matrix<T> Matrix<T>::operator*(const Matrix<T>& B) {
+matrix<T> matrix<T>::operator*(const matrix<T>& B) {
     if (!this->row || !this->col || !B.row || !B.col) {
         throw "No matching matrix";
     } else if (this->col != B.row) {
         throw "No matching matrix";
     }
 
-    Matrix<T> Temp(this->row, B.col);
+    matrix<T> Temp(this->row, B.col);
     #pragma omp parallel for
     for (size_t i = 0; i < Temp.row; ++i)
         for (size_t j = 0; j < Temp.col; ++j) {
@@ -132,7 +132,7 @@ Matrix<T> Matrix<T>::operator*(const Matrix<T>& B) {
 }
 
 template<typename T>
-Matrix<T>& Matrix<T>::operator=(const Matrix<T>& B) {
+matrix<T>& matrix<T>::operator=(const matrix<T>& B) {
     if (num) {
         delete[] num;
     }
@@ -154,19 +154,19 @@ Matrix<T>& Matrix<T>::operator=(const Matrix<T>& B) {
 }
 
 template<typename T>
-T* Matrix<T>::operator[](const size_t addr) {
+T* matrix<T>::operator[](const size_t addr) {
     return addr >= this->row ? nullptr : this->num[addr];
 }
 
 template<typename T>
-Matrix<T> Matrix<T>::hadamard(const Matrix<T>& B) {
+matrix<T> matrix<T>::hadamard(const matrix<T>& B) {
     if (!this->row || !this->col || !B.row || !B.col) {
         throw "No matching matrix";
     } else if (this->row != B.row || this->col != B.col) {
         throw "No matching matrix";
     }
 
-    Matrix<T> temp(this->row, this->col);
+    matrix<T> temp(this->row, this->col);
     #pragma omp parallel for
     for (size_t i = 0; i < this->row * this->col; ++i)
         temp.num[i] = this->num[i] * B.num[i];
@@ -174,8 +174,8 @@ Matrix<T> Matrix<T>::hadamard(const Matrix<T>& B) {
 }
 
 template<typename T>
-Matrix<T> Matrix<T>::transpose() {
-    Matrix<T> temp(this->col, this->row);
+matrix<T> matrix<T>::transpose() {
+    matrix<T> temp(this->col, this->row);
     #pragma omp parallel for
     for (size_t i = 0; i < this->row; ++i)
         for (size_t j = 0; j < this->col; ++j)
@@ -184,14 +184,14 @@ Matrix<T> Matrix<T>::transpose() {
 }
 
 template<typename T>
-Matrix<T> Matrix<T>::no_parallel_mult(const Matrix<T>& B) {
+matrix<T> matrix<T>::no_parallel_mult(const matrix<T>& B) {
     if (!this->row || !this->col || !B.row || !B.col) {
         throw "No matching matrix";
     } else if (this->col != B.row) {
         throw "No matching matrix";
     }
 
-    Matrix<T> Temp(this->row, B.col);
+    matrix<T> Temp(this->row, B.col);
     for (size_t i = 0; i < Temp.row; ++i)
         for (size_t j = 0; j < Temp.col; ++j) {
             T trans = 0;
@@ -203,13 +203,13 @@ Matrix<T> Matrix<T>::no_parallel_mult(const Matrix<T>& B) {
 }
 
 template<typename T>
-void Matrix<T>::random_init() {
+void matrix<T>::random_init() {
     for (size_t i = 0; i < row * col; ++i)
         num[i] = static_cast<T>(rand() % 10);
 }
 
 template<typename T>
-std::ostream& operator<<(std::ostream& out, const Matrix<T>& m) {
+std::ostream& operator<<(std::ostream& out, const matrix<T>& m) {
     for (size_t i = 0; i < m.row; ++i)
         for (size_t j = 0; j < m.col; ++j)
             out << m.num[i * m.col + j] << ((char)(j == m.col - 1)? '\n' : ' ');
@@ -217,7 +217,7 @@ std::ostream& operator<<(std::ostream& out, const Matrix<T>& m) {
 }
 
 template<typename T>
-std::istream& operator>>(std::istream& in, const Matrix<T>& m) {
+std::istream& operator>>(std::istream& in, const matrix<T>& m) {
     for (size_t i = 0; i < m.row; ++i)
         for (size_t j = 0; j < m.col; ++j)
             in >> m.num[i * m.col + j];
