@@ -1,2 +1,3 @@
 # MyMatrix
-C++ template class Matrix written by myself
+
+C++ template class Matrix

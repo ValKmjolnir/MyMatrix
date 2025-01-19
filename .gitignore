@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# Directory
+.vscode
+.DS_Store
