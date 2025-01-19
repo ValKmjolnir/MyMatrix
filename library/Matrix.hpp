@@ -31,8 +31,8 @@ public:
     Matrix  operator* (const Matrix<T>&);
     Matrix& operator= (const Matrix<T>&);
     T*      operator[](const size_t);
-    Matrix  Hadamard  (const Matrix<T>&);
-    Matrix  Transpose ();
+    Matrix  hadamard  (const Matrix<T>&);
+    Matrix  transpose ();
 
 public:
     void random_init();
@@ -158,7 +158,7 @@ T* Matrix<T>::operator[](const size_t addr) {
 }
 
 template<typename T>
-Matrix<T> Matrix<T>::Hadamard(const Matrix<T>& B) {
+Matrix<T> Matrix<T>::hadamard(const Matrix<T>& B) {
     if (!this->row || !this->col || !B.row || !B.col) {
         throw "No matching matrix";
     } else if (this->row != B.row || this->col != B.col) {
@@ -173,7 +173,7 @@ Matrix<T> Matrix<T>::Hadamard(const Matrix<T>& B) {
 }
 
 template<typename T>
-Matrix<T> Matrix<T>::Transpose() {
+Matrix<T> Matrix<T>::transpose() {
     Matrix<T> temp(this->col, this->row);
     #pragma omp parallel for
     for (size_t i = 0; i < this->row; ++i)

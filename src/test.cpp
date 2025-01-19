@@ -9,7 +9,7 @@ int main() {
     Matrix<float> m(6, 2);
     m.random_init();
 
-    auto n = m.Transpose();
+    auto n = m.transpose();
     auto multi = m * n;
     auto copy = m;
 
@@ -19,6 +19,6 @@ int main() {
     std::cout << "copy:\n" << copy << std::endl;
     std::cout << "sub:\n" << m - copy << std::endl;
     std::cout << "add:\n" << m + copy << std::endl;
-    std::cout << "dot:\n" << m.Hadamard(copy) << std::endl;
+    std::cout << "dot:\n" << m.hadamard(copy) << std::endl;
     return 0;
 }
