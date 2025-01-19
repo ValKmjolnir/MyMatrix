@@ -33,6 +33,7 @@ public:
     T*      operator[](const size_t);
     Matrix  hadamard  (const Matrix<T>&);
     Matrix  transpose ();
+    Matrix  no_parallel_mult(const Matrix<T>&);
 
 public:
     void random_init();
@@ -180,6 +181,25 @@ Matrix<T> Matrix<T>::transpose() {
         for (size_t j = 0; j < this->col; ++j)
             temp.num[j * this->row + i] = this->num[i * this->col + j];
     return temp;
+}
+
+template<typename T>
+Matrix<T> Matrix<T>::no_parallel_mult(const Matrix<T>& B) {
+    if (!this->row || !this->col || !B.row || !B.col) {
+        throw "No matching matrix";
+    } else if (this->col != B.row) {
+        throw "No matching matrix";
+    }
+
+    Matrix<T> Temp(this->row, B.col);
+    for (size_t i = 0; i < Temp.row; ++i)
+        for (size_t j = 0; j < Temp.col; ++j) {
+            T trans = 0;
+            for (size_t k = 0; k < this->col; ++k)
+                trans += this->num[i * this->col + k] * B.num[k * B.col + j];
+            Temp.num[i * Temp.col + j] = trans;
+        }
+    return Temp;
 }
 
 template<typename T>
