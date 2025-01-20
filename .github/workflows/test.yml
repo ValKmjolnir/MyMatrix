@@ -8,15 +8,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  mac-aarch64:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: make
-    - name: Test
-      run: ./test.out
-    
   linux-x86_64:
     runs-on: ubuntu-latest
     steps:

@@ -1,8 +1,8 @@
-#include "matrix.hpp"
-
 #include <iostream>
 #include <ctime>
 #include <chrono>
+
+#include "matrix.hpp"
 
 int main() {
     using clk = std::chrono::high_resolution_clock;
@@ -16,6 +16,7 @@ int main() {
     auto n = m.transpose();
     auto multi = m * n;
     auto copy = m;
+    copy = m;
 
     std::cout << "origin:\n" << m << std::endl;
     std::cout << "transpose:\n" << n << std::endl;
@@ -24,6 +25,7 @@ int main() {
     std::cout << "sub:\n" << m - copy << std::endl;
     std::cout << "add:\n" << m + copy << std::endl;
     std::cout << "dot:\n" << m.hadamard(copy) << std::endl;
+    std::cout << "m[3][1]: " << m[3][1] << std::endl;
 
     matrix<float> large(2048, 256);
     large.random_init();
@@ -32,12 +34,12 @@ int main() {
     auto res = large * large.transpose();
     auto end = clk::now();
     auto t = static_cast<float>((end - begin).count()) / den;
-    std::cout << "time: " << t << " s" << std::endl;
+    std::cout << "time (omp parallel): " << t << " s" << std::endl;
 
     auto begin_no_parallel = clk::now();
     auto res_no_parallel = large.no_parallel_mult(large.transpose());
     auto end_no_parallel = clk::now();
     auto t_no_parallel = static_cast<float>((end_no_parallel - begin_no_parallel).count()) / den;
-    std::cout << "time no parallel: " << t_no_parallel << " s" << std::endl;
+    std::cout << "time (no parallel): " << t_no_parallel << " s" << std::endl;
     return 0;
 }
