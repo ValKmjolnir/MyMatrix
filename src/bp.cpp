@@ -18,15 +18,15 @@ private:
 
 public:
     neural_network():
-        hidden_weight(2, 2), hidden_bias(1, 2),
-        output_weight(2, 1), output_bias(1, 1) {
+        hidden_weight(2, 8), hidden_bias(1, 8),
+        output_weight(8, 1), output_bias(1, 1) {
         hidden_weight.random_init();
-        hidden_weight /= 5.0;
+        hidden_weight /= 10.0;
         hidden_bias.random_init();
         hidden_bias /= 10.0;
 
         output_weight.random_init();
-        output_weight /= 5.0;
+        output_weight /= 10.0;
         output_bias.random_init();
         output_bias /= 10.0;
 
