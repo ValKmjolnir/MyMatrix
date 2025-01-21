@@ -15,4 +15,6 @@ jobs:
     - name: Build
       run: make
     - name: Test
-      run: ./test.out
+      run: |
+        ./test.out
+        ./bp.out

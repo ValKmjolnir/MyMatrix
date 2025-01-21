@@ -20,6 +20,23 @@ private:
     size_t col;
     T* num;
 
+private:
+    [[noreturn]]
+    void report(const char* calc, const matrix<T>& Temp) const {
+        if (Temp.row != row || Temp.col != col) {
+            std::cout << "Error: matrix size not match! ";
+            std::cout << "In calculation " << calc << ": expect (";
+            std::cout << row << "x" << col << "), but get (";
+            std::cout << Temp.row << "x" << Temp.col << ").\n";
+        } else {
+            std::cout << "Error: unknown error! ";
+            std::cout << "In calculation " << calc << ": expect (";
+            std::cout << row << "x" << col << "), but get (";
+            std::cout << Temp.row << "x" << Temp.col << ").\n";
+        }
+        std::exit(-1);
+    }
+
 public:
     matrix(const size_t __row, const size_t __col) {
         row = __row;
@@ -66,7 +83,7 @@ public:
                 Temp.num[i] += B.num[i];
             return Temp;
         } else {
-            throw "No matching matrix";
+            report("+", B);
         }
     }
 
@@ -78,15 +95,15 @@ public:
                 Temp.num[i] -= B.num[i];
             return Temp;
         } else {
-            throw "No matching matrix";
+            report("-", B);
         }
     }
 
     matrix operator*(const matrix<T>& B) {
         if (!this->row || !this->col || !B.row || !B.col) {
-            throw "No matching matrix";
+            report("*", B);
         } else if (this->col != B.row) {
-            throw "No matching matrix";
+            report("*", B);
         }
 
         matrix<T> Temp(this->row, B.col);
@@ -122,6 +139,13 @@ public:
         return *this;
     }
 
+    matrix& operator*=(const T B) {
+        #pragma omp parallel for
+        for (size_t i = 0; i < row * col; ++i)
+            num[i] *= B;
+        return *this;
+    }
+
     matrix& operator/=(const T B) {
         #pragma omp parallel for
         for (size_t i = 0; i < row * col; ++i)
@@ -145,9 +169,9 @@ public:
 
     matrix hadamard(const matrix<T>& B) {
         if (!this->row || !this->col || !B.row || !B.col) {
-            throw "No matching matrix";
+            report("hadamard", B);
         } else if (this->row != B.row || this->col != B.col) {
-            throw "No matching matrix";
+            report("hadamard", B);
         }
 
         matrix<T> temp(this->row, this->col);
@@ -168,9 +192,9 @@ public:
 
     matrix no_parallel_mult(const matrix<T>& B) {
         if (!this->row || !this->col || !B.row || !B.col) {
-            throw "No matching matrix";
+            report("*", B);
         } else if (this->col != B.row) {
-            throw "No matching matrix";
+            report("*", B);
         }
 
         matrix<T> Temp(this->row, B.col);
@@ -187,7 +211,7 @@ public:
 public:
     void random_init()  {
         for (size_t i = 0; i < row * col; ++i)
-            num[i] = ((rand() & 1)? 1 : -1) * static_cast<T>(rand() % 10);
+            num[i] = ((rand() & 1)? 1 : -1) * static_cast<T>((rand() + 1) % 10);
     }
 
 public:
@@ -273,6 +297,14 @@ public:
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
             temp.num[i] = this->num[i] * (1 - this->num[i]);
+        return temp;
+    }
+
+    matrix pow(const T B) {
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = std::pow(this->num[i], B);
         return temp;
     }
 };
