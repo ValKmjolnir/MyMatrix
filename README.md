@@ -4,7 +4,9 @@ C++ template class matrix
 
 ## Build
 
-OpenMP is needed.
+OpenMP is needed. Enable OpenMP by `-fopenmp` flag.
 
-If want to build on macOS, install OpenMP by `brew install libomp`,
-and remember use homebrew clang instead of apple clang.
+### MacOS Build
+
+Install OpenMP by `brew install libomp`,
+and remember to use homebrew clang instead of apple clang.

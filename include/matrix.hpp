@@ -1,6 +1,6 @@
-/* matrix.hpp By ValKmjolnir 2020/5/3             */
-/* Rewrite by ValKmjolnir 2022/11/16              */
-/* Updated by ValKmjolnir 2025/01/19              */
+/* matrix.hpp by ValKmjolnir 2020/5/3             */
+/* Rewrite    by ValKmjolnir 2022/11/16           */
+/* Update     by ValKmjolnir 2025/01/19           */
 
 #pragma once
 
@@ -58,10 +58,76 @@ public:
     }
 
 public:
-    matrix operator+(const matrix<T>&);
-    matrix operator-(const matrix<T>&);
-    matrix operator*(const matrix<T>&);
-    matrix& operator=(const matrix<T>&);
+    matrix operator+(const matrix<T>& B) {
+        if (this->row == B.row && this->col==B.col) {
+            auto Temp = *this;
+            #pragma omp parallel for
+            for (size_t i = 0; i < row * col; ++i)
+                Temp.num[i] += B.num[i];
+            return Temp;
+        } else {
+            throw "No matching matrix";
+        }
+    }
+
+    matrix operator-(const matrix<T>& B) {
+        if (this->row == B.row && this->col == B.col) {
+            auto Temp = *this;
+            #pragma omp parallel for
+            for (size_t i = 0; i < row * col; ++i)
+                Temp.num[i] -= B.num[i];
+            return Temp;
+        } else {
+            throw "No matching matrix";
+        }
+    }
+
+    matrix operator*(const matrix<T>& B) {
+        if (!this->row || !this->col || !B.row || !B.col) {
+            throw "No matching matrix";
+        } else if (this->col != B.row) {
+            throw "No matching matrix";
+        }
+
+        matrix<T> Temp(this->row, B.col);
+        #pragma omp parallel for collapse(2)
+        for (size_t i = 0; i < Temp.row; ++i)
+            for (size_t j = 0; j < Temp.col; ++j) {
+                T trans = 0;
+                for (size_t k = 0; k < this->col; ++k)
+                    trans += this->num[i * this->col + k] * B.num[k * B.col + j];
+                Temp.num[i * Temp.col + j] = trans;
+            }
+        return Temp;
+    }
+
+    matrix& operator=(const matrix<T>& B) {
+        if (num) {
+            delete[] num;
+        }
+
+        row = B.row;
+        col = B.col;
+        if (row > 0 && col > 0) {
+            num = new T [row * col];
+            #pragma omp parallel for
+            for (size_t i = 0; i < row * col; ++i)
+                num[i] = B.num[i];
+        } else {
+            row = 0;
+            col = 0;
+            num = nullptr;
+        }
+
+        return *this;
+    }
+
+    matrix& operator/=(const T B) {
+        #pragma omp parallel for
+        for (size_t i = 0; i < row * col; ++i)
+            num[i] /= B;
+        return *this;
+    }
 
 public:
     T* operator[](const size_t addr) {
@@ -69,6 +135,14 @@ public:
     }
 
 public:
+    T sum() const {
+        T sum = 0;
+        #pragma omp parallel for reduction(+:sum)
+        for (size_t i = 0; i < row * col; ++i)
+            sum += num[i];
+        return sum;
+    }
+
     matrix hadamard(const matrix<T>& B) {
         if (!this->row || !this->col || !B.row || !B.col) {
             throw "No matching matrix";
@@ -113,7 +187,7 @@ public:
 public:
     void random_init()  {
         for (size_t i = 0; i < row * col; ++i)
-            num[i] = static_cast<T>(rand() % 10);
+            num[i] = ((rand() & 1)? 1 : -1) * static_cast<T>(rand() % 10);
     }
 
 public:
@@ -132,72 +206,41 @@ public:
                 in >> m.num[i * m.col + j];
         return in;
     }
+
+public:
+    matrix sigmoid() {
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = 1 / (1 + std::exp(-this->num[i]));
+        return temp;
+    }
+
+    matrix tanh() {
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = std::tanh(this->num[i]);
+        return temp;
+    }
+
+    matrix relu() {
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = this->num[i] > 0 ? this->num[i] : 0;
+        return temp;
+    }
+
+    matrix softmax() {
+        T sum = 0;
+        #pragma omp parallel for reduction(+:sum)
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            sum += std::exp(this->num[i]);
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = std::exp(this->num[i]) / sum;
+        return temp;
+    }
 };
-
-template<typename T>
-matrix<T> matrix<T>::operator+(const matrix<T>& B) {
-    if (this->row == B.row && this->col==B.col) {
-        auto Temp = *this;
-        #pragma omp parallel for
-        for (size_t i = 0; i < row * col; ++i)
-            Temp.num[i] += B.num[i];
-        return Temp;
-    } else {
-        throw "No matching matrix";
-    }
-}
-
-template<typename T>
-matrix<T> matrix<T>::operator-(const matrix<T>& B) {
-    if (this->row == B.row && this->col == B.col) {
-        auto Temp = *this;
-        #pragma omp parallel for
-        for (size_t i = 0; i < row * col; ++i)
-            Temp.num[i] -= B.num[i];
-        return Temp;
-    } else {
-        throw "No matching matrix";
-    }
-}
-
-template<typename T>
-matrix<T> matrix<T>::operator*(const matrix<T>& B) {
-    if (!this->row || !this->col || !B.row || !B.col) {
-        throw "No matching matrix";
-    } else if (this->col != B.row) {
-        throw "No matching matrix";
-    }
-
-    matrix<T> Temp(this->row, B.col);
-    #pragma omp parallel for collapse(2)
-    for (size_t i = 0; i < Temp.row; ++i)
-        for (size_t j = 0; j < Temp.col; ++j) {
-            T trans = 0;
-            for (size_t k = 0; k < this->col; ++k)
-                trans += this->num[i * this->col + k] * B.num[k * B.col + j];
-            Temp.num[i * Temp.col + j] = trans;
-        }
-    return Temp;
-}
-
-template<typename T>
-matrix<T>& matrix<T>::operator=(const matrix<T>& B) {
-    if (num) {
-        delete[] num;
-    }
-
-    row = B.row;
-    col = B.col;
-    if (row > 0 && col > 0) {
-        num = new T [row * col];
-        #pragma omp parallel for
-        for (size_t i = 0; i < row * col; ++i)
-            num[i] = B.num[i];
-    } else {
-        row = 0;
-        col = 0;
-        num = nullptr;
-    }
-
-    return *this;
-}

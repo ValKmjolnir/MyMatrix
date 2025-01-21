@@ -12,6 +12,7 @@ int main() {
 
     matrix<float> m(6, 2);
     m.random_init();
+    m /= 10;
 
     auto n = m.transpose();
     auto multi = m * n;
@@ -25,6 +26,11 @@ int main() {
     std::cout << "sub:\n" << m - copy << std::endl;
     std::cout << "add:\n" << m + copy << std::endl;
     std::cout << "dot:\n" << m.hadamard(copy) << std::endl;
+    std::cout << "sigmoid:\n" << m.sigmoid() << std::endl;
+    std::cout << "tanh:\n" << m.tanh() << std::endl;
+    std::cout << "relu:\n" << m.relu() << std::endl;
+    std::cout << "softmax:\n" << m.softmax() << std::endl;
+    std::cout << "softmax.sum: " << m.softmax().sum() << std::endl;
     std::cout << "m[3][1]: " << m[3][1] << std::endl;
 
     matrix<float> large(2048, 256);
