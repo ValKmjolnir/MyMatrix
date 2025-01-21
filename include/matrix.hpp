@@ -216,6 +216,14 @@ public:
         return temp;
     }
 
+    matrix sigmoid_derivative() {
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = this->num[i] * (1 - this->num[i]);
+        return temp;
+    }
+
     matrix tanh() {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
@@ -224,11 +232,27 @@ public:
         return temp;
     }
 
+    matrix tanh_derivative() {
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = 1 - std::pow(std::tanh(this->num[i]), 2);
+        return temp;
+    }
+
     matrix relu() {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
             temp.num[i] = this->num[i] > 0 ? this->num[i] : 0;
+        return temp;
+    }
+
+    matrix relu_derivative() {
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = this->num[i] > 0 ? 1 : 0;
         return temp;
     }
 
@@ -241,6 +265,14 @@ public:
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
             temp.num[i] = std::exp(this->num[i]) / sum;
+        return temp;
+    }
+
+    matrix softmax_derivative() {
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = this->num[i] * (1 - this->num[i]);
         return temp;
     }
 };
