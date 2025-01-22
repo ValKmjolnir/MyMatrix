@@ -139,6 +139,17 @@ public:
         return *this;
     }
 
+    matrix& operator+=(const matrix<T>& B) {
+        if (this->row == B.row && this->col == B.col) {
+            #pragma omp parallel for
+            for (size_t i = 0; i < row * col; ++i)
+                num[i] += B.num[i];
+            return *this;
+        } else {
+            report("+=", B);
+        }
+    }
+
     matrix& operator*=(const T B) {
         #pragma omp parallel for
         for (size_t i = 0; i < row * col; ++i)
@@ -305,6 +316,31 @@ public:
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
             temp.num[i] = std::pow(this->num[i], B);
+        return temp;
+    }
+
+    matrix l1_norm() {
+        T sum = 0;
+        #pragma omp parallel for reduction(+:sum)
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            sum += std::abs(this->num[i]);
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            temp.num[i] = this->num[i]/sum;
+        return temp;
+    }
+
+    matrix l2_norm() {
+        T sum = 0;
+        #pragma omp parallel for reduction(+:sum)
+        for (size_t i = 0; i < this->row * this->col; ++i)
+            sum += std::pow(this->num[i], 2);
+        sum = std::sqrt(sum);
+        matrix<T> temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row* this->col; ++i)
+            temp.num[i] = this->num[i]/sum;
         return temp;
     }
 };
