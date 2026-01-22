@@ -1,6 +1,7 @@
 #include <matrix.hpp>
 
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
@@ -90,7 +91,7 @@ public:
             if (i % 100 == 0) {
                 std::cout << "Total error: " << total_error << std::endl;
             }
-            if (total_error < 0.01) {
+            if (total_error < 0.005) {
                 std::cout << "Training complete after " << i << " times" << std::endl;
                 break;
             }
@@ -105,6 +106,24 @@ public:
             std::cout << "Output: " << output_results[i] << std::endl;
         }
     }
+
+    void save() {
+        std::ofstream fout("bp.dat", std::ios::binary);
+        hidden_weight.save(fout);
+        hidden_bias.save(fout);
+        output_weight.save(fout);
+        output_bias.save(fout);
+        fout.close();
+    }
+
+    void load() {
+        std::ifstream fin("bp.dat", std::ios::binary);
+        hidden_weight.load(fin);
+        hidden_bias.load(fin);
+        output_weight.load(fin);
+        output_bias.load(fin);
+        fin.close();
+    }
 };
 
 int main() {
@@ -112,6 +131,9 @@ int main() {
 
     neural_network nn;
     nn.train();
+    nn.save();
+
+    nn.load();
     nn.calc();
     return 0;
 }

@@ -1,6 +1,7 @@
 /* matrix.hpp by ValKmjolnir 2020/5/3             */
 /* Rewrite    by ValKmjolnir 2022/11/16           */
 /* Update     by ValKmjolnir 2025/01/19           */
+/*            by ValKmjolnir 2026/01/22           */
 
 #pragma once
 
@@ -76,7 +77,7 @@ public:
 
 public:
     matrix operator+(const matrix<T>& B) {
-        if (this->row == B.row && this->col==B.col) {
+        if (this->row == B.row && this->col == B.col) {
             auto Temp = *this;
             #pragma omp parallel for
             for (size_t i = 0; i < row * col; ++i)
@@ -342,5 +343,20 @@ public:
         for (size_t i = 0; i < this->row* this->col; ++i)
             temp.num[i] = this->num[i]/sum;
         return temp;
+    }
+
+    void save(std::ostream& out) const {
+        out.write((char*)&this->row, sizeof(size_t));
+        out.write((char*)&this->col, sizeof(size_t));
+        out.write((char*)this->num, sizeof(T) * this->row * this->col);
+    }
+
+    void load(std::istream& in) {
+        in.read((char*)&this->row, sizeof(size_t));
+        in.read((char*)&this->col, sizeof(size_t));
+
+        auto tmp = matrix<T>(this->row, this->col);
+        in.read((char*)tmp.num, sizeof(T) * this->row * this->col);
+        *this = tmp;
     }
 };
