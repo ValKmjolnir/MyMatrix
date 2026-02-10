@@ -19,17 +19,13 @@ private:
 
 public:
     neural_network():
-        hidden_weight(2, 8), hidden_bias(1, 8),
-        output_weight(8, 1), output_bias(1, 1) {
+        hidden_weight(2, 16), hidden_bias(1, 16),
+        output_weight(16, 1), output_bias(1, 1) {
         hidden_weight.random_init();
-        hidden_weight /= 10.0;
         hidden_bias.random_init();
-        hidden_bias /= 10.0;
 
         output_weight.random_init();
-        output_weight /= 10.0;
         output_bias.random_init();
-        output_bias /= 10.0;
 
         matrix<float> data = matrix<float>(2, 1);
         matrix<float> out = matrix<float>(1, 1);

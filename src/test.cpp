@@ -44,12 +44,14 @@ int main() {
     auto res = large * large.transpose();
     auto end = clk::now();
     auto t = static_cast<float>((end - begin).count()) / den;
-    std::cout << "time (omp parallel): " << t << " s" << std::endl;
+    std::cout << "time (omp parallel): " << t << " s "
+              << "(" << large.get_col() << " x " << large.get_row() << ")\n";
 
-    auto begin_no_parallel = clk::now();
-    auto res_no_parallel = large.no_parallel_mult(large.transpose());
-    auto end_no_parallel = clk::now();
-    auto t_no_parallel = static_cast<float>((end_no_parallel - begin_no_parallel).count()) / den;
-    std::cout << "time (no parallel): " << t_no_parallel << " s" << std::endl;
+    auto begin_seq = clk::now();
+    auto res_seq = large.mult_sequential(large.transpose());
+    auto end_seq = clk::now();
+    auto t_seq = static_cast<float>((end_seq - begin_seq).count()) / den;
+    std::cout << "time (no parallel): " << t_seq << " s "
+              << "(" << large.get_col() << " x " << large.get_row() << ")\n";
     return 0;
 }

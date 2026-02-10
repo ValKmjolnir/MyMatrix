@@ -13,29 +13,38 @@
 #include <cstring>
 #include <cstdint>
 #include <cstdlib>
+#include <stdexcept>
+#include <random>
 
 template<typename T>
 class matrix {
 private:
+    static constexpr size_t SMALL_MATRIX_THRESHOLD = 100;
+
     size_t row;
     size_t col;
     T* num;
 
 private:
-    [[noreturn]]
     void report(const char* calc, const matrix<T>& Temp) const {
-        if (Temp.row != row || Temp.col != col) {
-            std::cout << "Error: matrix size not match! ";
-            std::cout << "In calculation " << calc << ": expect (";
-            std::cout << row << "x" << col << "), but get (";
-            std::cout << Temp.row << "x" << Temp.col << ").\n";
+        std::ostringstream oss;
+        oss << "Error: matrix size not match! In calculation " << calc 
+            << ": expect (" << row << " x " << col << "), but get (" 
+            << Temp.row << " x " << Temp.col << ").";
+        throw std::runtime_error(oss.str());
+    }
+
+    void copy_data(const T* source, T* destination, size_t size) {
+        if (size <= SMALL_MATRIX_THRESHOLD) {
+            for (size_t i = 0; i < size; ++i) {
+                destination[i] = source[i];
+            }
         } else {
-            std::cout << "Error: unknown error! ";
-            std::cout << "In calculation " << calc << ": expect (";
-            std::cout << row << "x" << col << "), but get (";
-            std::cout << Temp.row << "x" << Temp.col << ").\n";
+            #pragma omp parallel for
+            for (size_t i = 0; i < size; ++i) {
+                destination[i] = source[i];
+            }
         }
-        std::exit(-1);
     }
 
 public:
@@ -57,15 +66,23 @@ public:
         col = Temp.col;
         if (row > 0 && col > 0) {
             num = new T [row * col];
-            #pragma omp parallel for
-            for (size_t i = 0; i < row * col; ++i)
-                num[i] = Temp.num[i];
+            copy_data(Temp.num, num, row * col);
         } else {
             row = 0;
             col = 0;
             num = nullptr;
         }
         return;
+    }
+
+    matrix(matrix<T>&& Temp) noexcept {
+        row = Temp.row;
+        col = Temp.col;
+        num = Temp.num;
+
+        Temp.row = 0;
+        Temp.col = 0;
+        Temp.num = nullptr;
     }
 
     ~matrix() {
@@ -76,28 +93,35 @@ public:
     }
 
 public:
+    auto get_row() const {
+        return row;
+    }
+
+    auto get_col() const {
+        return col;
+    }
+
+public:
     matrix operator+(const matrix<T>& B) {
-        if (this->row == B.row && this->col == B.col) {
-            auto Temp = *this;
-            #pragma omp parallel for
-            for (size_t i = 0; i < row * col; ++i)
-                Temp.num[i] += B.num[i];
-            return Temp;
-        } else {
+        if (this->row != B.row || this->col != B.col) {
             report("+", B);
         }
+        matrix<T> Temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < row * col; ++i)
+            Temp.num[i] = this->num[i] + B.num[i];
+        return Temp;
     }
 
     matrix operator-(const matrix<T>& B) {
-        if (this->row == B.row && this->col == B.col) {
-            auto Temp = *this;
-            #pragma omp parallel for
-            for (size_t i = 0; i < row * col; ++i)
-                Temp.num[i] -= B.num[i];
-            return Temp;
-        } else {
+        if (this->row != B.row || this->col != B.col) {
             report("-", B);
         }
+        matrix<T> Temp(this->row, this->col);
+        #pragma omp parallel for
+        for (size_t i = 0; i < row * col; ++i)
+            Temp.num[i] = this->num[i] - B.num[i];
+        return Temp;
     }
 
     matrix operator*(const matrix<T>& B) {
@@ -120,6 +144,10 @@ public:
     }
 
     matrix& operator=(const matrix<T>& B) {
+        if (this == &B) {
+            return *this; // self-assignment check
+        }
+
         if (num) {
             delete[] num;
         }
@@ -128,9 +156,7 @@ public:
         col = B.col;
         if (row > 0 && col > 0) {
             num = new T [row * col];
-            #pragma omp parallel for
-            for (size_t i = 0; i < row * col; ++i)
-                num[i] = B.num[i];
+            copy_data(B.num, num, row * col);
         } else {
             row = 0;
             col = 0;
@@ -141,14 +167,23 @@ public:
     }
 
     matrix& operator+=(const matrix<T>& B) {
-        if (this->row == B.row && this->col == B.col) {
-            #pragma omp parallel for
-            for (size_t i = 0; i < row * col; ++i)
-                num[i] += B.num[i];
-            return *this;
-        } else {
+        if (this->row != B.row || this->col != B.col) {
             report("+=", B);
         }
+        #pragma omp parallel for
+        for (size_t i = 0; i < row * col; ++i)
+            num[i] += B.num[i];
+        return *this;
+    }
+
+    matrix& operator-=(const matrix<T>& B) {
+        if (this->row != B.row || this->col != B.col) {
+            report("-=", B);
+        }
+        #pragma omp parallel for
+        for (size_t i = 0; i < row * col; ++i)
+            num[i] -= B.num[i];
+        return *this;
     }
 
     matrix& operator*=(const T B) {
@@ -202,7 +237,7 @@ public:
         return temp;
     }
 
-    matrix no_parallel_mult(const matrix<T>& B) {
+    matrix mult_sequential(const matrix<T>& B) {
         if (!this->row || !this->col || !B.row || !B.col) {
             report("*", B);
         } else if (this->col != B.row) {
@@ -221,9 +256,13 @@ public:
     }
 
 public:
-    void random_init()  {
+    void random_init() {
+        static std::random_device rd;
+        static std::mt19937 gen(rd());
+        static std::uniform_real_distribution<T> dis(-1.0, 1.0);
+
         for (size_t i = 0; i < row * col; ++i)
-            num[i] = ((rand() & 1)? 1 : -1) * static_cast<T>((rand() + 1) % 10);
+            num[i] = dis(gen);
     }
 
 public:
@@ -236,7 +275,7 @@ public:
     }
 
     template<typename _T>
-    friend std::istream& operator>>(std::istream& in, const matrix<_T>& m) {
+    friend std::istream& operator>>(std::istream& in, matrix<_T>& m) {
         for (size_t i = 0; i < m.row; ++i)
             for (size_t j = 0; j < m.col; ++j)
                 in >> m.num[i * m.col + j];
