@@ -34,6 +34,12 @@ private:
         throw std::runtime_error(oss.str());
     }
 
+    void report_zero_size(const char* calc) const {
+        std::ostringstream oss;
+        oss << "Error: matrix size is zero! (" << calc << ")";
+        throw std::runtime_error(oss.str());
+    }
+
     void copy_data(const T* source, T* destination, size_t size) {
         if (size <= SMALL_MATRIX_THRESHOLD) {
             for (size_t i = 0; i < size; ++i) {
@@ -102,7 +108,7 @@ public:
     }
 
 public:
-    matrix operator+(const matrix<T>& B) {
+    matrix operator+(const matrix<T>& B) const {
         if (this->row != B.row || this->col != B.col) {
             report("+", B);
         }
@@ -113,7 +119,7 @@ public:
         return Temp;
     }
 
-    matrix operator-(const matrix<T>& B) {
+    matrix operator-(const matrix<T>& B) const {
         if (this->row != B.row || this->col != B.col) {
             report("-", B);
         }
@@ -124,9 +130,9 @@ public:
         return Temp;
     }
 
-    matrix operator*(const matrix<T>& B) {
+    matrix operator*(const matrix<T>& B) const {
         if (!this->row || !this->col || !B.row || !B.col) {
-            report("*", B);
+            report_zero_size("*");
         } else if (this->col != B.row) {
             report("*", B);
         }
@@ -163,6 +169,25 @@ public:
             num = nullptr;
         }
 
+        return *this;
+    }
+
+    matrix& operator=(matrix<T>&& B) noexcept {
+        if (this == &B) {
+            return *this; // self-assignment check
+        }
+
+        if (num) {
+            delete[] num;
+        }
+
+        row = B.row;
+        col = B.col;
+        num = B.num;
+
+        B.row = 0;
+        B.col = 0;
+        B.num = nullptr;
         return *this;
     }
 
@@ -205,6 +230,10 @@ public:
         return addr >= row ? nullptr : &this->num[addr * col];
     }
 
+    const T* operator[](const size_t addr) const {
+        return addr >= row ? nullptr : &this->num[addr * col];
+    }
+
 public:
     T sum() const {
         T sum = 0;
@@ -214,9 +243,9 @@ public:
         return sum;
     }
 
-    matrix hadamard(const matrix<T>& B) {
+    matrix hadamard(const matrix<T>& B) const {
         if (!this->row || !this->col || !B.row || !B.col) {
-            report("hadamard", B);
+            report_zero_size("hadamard");
         } else if (this->row != B.row || this->col != B.col) {
             report("hadamard", B);
         }
@@ -228,7 +257,7 @@ public:
         return temp;
     }
 
-    matrix transpose() {
+    matrix transpose() const {
         matrix<T> temp(this->col, this->row);
         #pragma omp parallel for collapse(2)
         for (size_t i = 0; i < this->row; ++i)
@@ -237,9 +266,9 @@ public:
         return temp;
     }
 
-    matrix mult_sequential(const matrix<T>& B) {
+    matrix mult_sequential(const matrix<T>& B) const {
         if (!this->row || !this->col || !B.row || !B.col) {
-            report("*", B);
+            report_zero_size("*");
         } else if (this->col != B.row) {
             report("*", B);
         }
@@ -283,7 +312,7 @@ public:
     }
 
 public:
-    matrix sigmoid() {
+    matrix sigmoid() const {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -291,7 +320,7 @@ public:
         return temp;
     }
 
-    matrix sigmoid_derivative() {
+    matrix sigmoid_derivative() const {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -299,7 +328,7 @@ public:
         return temp;
     }
 
-    matrix tanh() {
+    matrix tanh() const {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -307,15 +336,15 @@ public:
         return temp;
     }
 
-    matrix tanh_derivative() {
+    matrix tanh_derivative() const {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
-            temp.num[i] = 1 - std::pow(std::tanh(this->num[i]), 2);
+            temp.num[i] = 1 - std::pow(this->num[i], 2);
         return temp;
     }
 
-    matrix relu() {
+    matrix relu() const {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -323,7 +352,7 @@ public:
         return temp;
     }
 
-    matrix relu_derivative() {
+    matrix relu_derivative() const {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -331,7 +360,7 @@ public:
         return temp;
     }
 
-    matrix softmax() {
+    matrix softmax() const {
         T sum = 0;
         #pragma omp parallel for reduction(+:sum)
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -343,7 +372,7 @@ public:
         return temp;
     }
 
-    matrix softmax_derivative() {
+    matrix softmax_derivative() const {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -351,7 +380,7 @@ public:
         return temp;
     }
 
-    matrix pow(const T B) {
+    matrix pow(const T B) const {
         matrix<T> temp(this->row, this->col);
         #pragma omp parallel for
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -359,7 +388,7 @@ public:
         return temp;
     }
 
-    matrix l1_norm() {
+    matrix l1_norm() const {
         T sum = 0;
         #pragma omp parallel for reduction(+:sum)
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -371,7 +400,7 @@ public:
         return temp;
     }
 
-    matrix l2_norm() {
+    matrix l2_norm() const {
         T sum = 0;
         #pragma omp parallel for reduction(+:sum)
         for (size_t i = 0; i < this->row * this->col; ++i)
