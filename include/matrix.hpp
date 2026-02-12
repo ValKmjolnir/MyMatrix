@@ -138,14 +138,31 @@ public:
         }
 
         matrix<T> Temp(this->row, B.col);
+        #pragma omp parallel for
+        for (size_t idx = 0; idx < Temp.row * Temp.col; ++idx)
+            Temp.num[idx] = 0;
+
+        const size_t BLOCK = 64;
         #pragma omp parallel for collapse(2)
-        for (size_t i = 0; i < Temp.row; ++i)
-            for (size_t j = 0; j < Temp.col; ++j) {
-                T trans = 0;
-                for (size_t k = 0; k < this->col; ++k)
-                    trans += this->num[i * this->col + k] * B.num[k * B.col + j];
-                Temp.num[i * Temp.col + j] = trans;
-            }
+        for (size_t ii = 0; ii < Temp.row; ii += BLOCK)
+            for (size_t jj = 0; jj < Temp.col; jj += BLOCK)
+                for (size_t kk = 0; kk < this->col; kk += BLOCK) {
+                    const size_t i_end = std::min(ii + BLOCK, Temp.row);
+                    const size_t j_end = std::min(jj + BLOCK, Temp.col);
+                    const size_t k_end = std::min(kk + BLOCK, this->col);
+                    
+                    for (size_t i = ii; i < i_end; ++i) {
+                        const size_t tbase = i * Temp.col;
+                        const size_t abase = i * this->col;
+                        for (size_t k = kk; k < k_end; ++k) {
+                            const T a = this->num[abase + k];
+                            const size_t bbase = k * B.col;
+                            for (size_t j = jj; j < j_end; ++j) {
+                                Temp.num[tbase + j] += a * B.num[bbase + j];
+                            }
+                        }
+                    }
+                }
         return Temp;
     }
 
@@ -274,13 +291,29 @@ public:
         }
 
         matrix<T> Temp(this->row, B.col);
-        for (size_t i = 0; i < Temp.row; ++i)
-            for (size_t j = 0; j < Temp.col; ++j) {
-                T trans = 0;
-                for (size_t k = 0; k < this->col; ++k)
-                    trans += this->num[i * this->col + k] * B.num[k * B.col + j];
-                Temp.num[i * Temp.col + j] = trans;
-            }
+        for (size_t idx = 0; idx < Temp.row * Temp.col; ++idx)
+            Temp.num[idx] = 0;
+
+        const size_t BLOCK = 64;
+        for (size_t ii = 0; ii < Temp.row; ii += BLOCK)
+            for (size_t jj = 0; jj < Temp.col; jj += BLOCK)
+                for (size_t kk = 0; kk < this->col; kk += BLOCK) {
+                    const size_t i_end = std::min(ii + BLOCK, Temp.row);
+                    const size_t j_end = std::min(jj + BLOCK, Temp.col);
+                    const size_t k_end = std::min(kk + BLOCK, this->col);
+                    
+                    for (size_t i = ii; i < i_end; ++i) {
+                        const size_t tbase = i * Temp.col;
+                        const size_t abase = i * this->col;
+                        for (size_t k = kk; k < k_end; ++k) {
+                            const T a = this->num[abase + k];
+                            const size_t bbase = k * B.col;
+                            for (size_t j = jj; j < j_end; ++j) {
+                                Temp.num[tbase + j] += a * B.num[bbase + j];
+                            }
+                        }
+                    }
+                }
         return Temp;
     }
 

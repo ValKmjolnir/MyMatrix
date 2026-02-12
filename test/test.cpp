@@ -37,7 +37,7 @@ int main() {
     std::cout << "softmax.sum: " << m.softmax().sum() << std::endl;
     std::cout << "m[3][1]: " << m[3][1] << std::endl;
 
-    matrix<float> large(2048, 256);
+    matrix<float> large(2048, 4096);
     large.random_init();
 
     auto begin = clk::now();
