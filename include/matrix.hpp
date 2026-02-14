@@ -28,8 +28,8 @@ private:
 private:
     void report(const char* calc, const matrix<T>& Temp) const {
         std::ostringstream oss;
-        oss << "Error: matrix size not match! In calculation " << calc 
-            << ": expect (" << row << " x " << col << "), but get (" 
+        oss << "Error: matrix size not match! In calculation " << calc
+            << ": expect (" << row << " x " << col << "), but get ("
             << Temp.row << " x " << Temp.col << ").";
         throw std::runtime_error(oss.str());
     }
@@ -150,7 +150,7 @@ public:
                     const size_t i_end = std::min(ii + BLOCK, Temp.row);
                     const size_t j_end = std::min(jj + BLOCK, Temp.col);
                     const size_t k_end = std::min(kk + BLOCK, this->col);
-                    
+
                     for (size_t i = ii; i < i_end; ++i) {
                         const size_t tbase = i * Temp.col;
                         const size_t abase = i * this->col;
@@ -301,7 +301,7 @@ public:
                     const size_t i_end = std::min(ii + BLOCK, Temp.row);
                     const size_t j_end = std::min(jj + BLOCK, Temp.col);
                     const size_t k_end = std::min(kk + BLOCK, this->col);
-                    
+
                     for (size_t i = ii; i < i_end; ++i) {
                         const size_t tbase = i * Temp.col;
                         const size_t abase = i * this->col;
@@ -394,22 +394,44 @@ public:
     }
 
     matrix softmax() const {
-        T sum = 0;
-        #pragma omp parallel for reduction(+:sum)
-        for (size_t i = 0; i < this->row * this->col; ++i)
-            sum += std::exp(this->num[i]);
         matrix<T> temp(this->row, this->col);
-        #pragma omp parallel for
-        for (size_t i = 0; i < this->row * this->col; ++i)
-            temp.num[i] = std::exp(this->num[i]) / sum;
+        for (size_t i = 0; i < this->row; ++i) {
+            T max_val = this->num[i * this->col];  // find max value of each line
+            for (size_t j = 1; j < this->col; ++j) {
+                if (this->num[i * this->col + j] > max_val) {
+                    max_val = this->num[i * this->col + j];
+                }
+            }
+
+            T sum = 0;
+            #pragma omp parallel for reduction(+:sum)
+            for (size_t j = 0; j < this->col; ++j) {
+                T exp_val = std::exp(this->num[i * this->col + j] - max_val);
+                sum += exp_val;
+                temp.num[i * temp.col + j] = exp_val;
+            }
+
+            #pragma omp parallel for
+            for (size_t j = 0; j < this->col; ++j)
+                temp.num[i * temp.col + j] /= sum;
+        }
         return temp;
     }
 
     matrix softmax_derivative() const {
+        // Note: This function assumes the input is the result after softmax, not logits
         matrix<T> temp(this->row, this->col);
-        #pragma omp parallel for
-        for (size_t i = 0; i < this->row * this->col; ++i)
-            temp.num[i] = this->num[i] * (1 - this->num[i]);
+        for (size_t i = 0; i < this->row; ++i) {
+            for (size_t j = 0; j < this->col; ++j) {
+                T si = this->num[i * this->col + i];
+                T sj = this->num[i * this->col + j];
+                if (i == j) {
+                    temp.num[i * temp.col + j] = sj * (1 - sj);
+                } else {
+                    temp.num[i * temp.col + j] = -si * sj;
+                }
+            }
+        }
         return temp;
     }
 

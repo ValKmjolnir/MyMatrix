@@ -17,4 +17,5 @@ jobs:
     - name: Test
       run: |
         ./test.out
+        ./test_softmax.out
         ./bp.out
