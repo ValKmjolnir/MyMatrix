@@ -321,9 +321,9 @@ public:
 
 public:
     void random_init() {
-        static std::random_device rd;
-        static std::mt19937 gen(rd());
-        static std::uniform_real_distribution<T> dis(-1.0, 1.0);
+        static thread_local std::random_device rd;
+        static thread_local std::mt19937 gen(rd());
+        static thread_local std::uniform_real_distribution<T> dis(-1.0, 1.0);
 
         for (size_t i = 0; i < row * col; ++i)
             num[i] = dis(gen);
@@ -422,19 +422,15 @@ public:
         return temp;
     }
 
-    matrix softmax_derivative() const {
-        // Note: This function assumes the input is the result after softmax, not logits
+    matrix softmax_cross_entropy_gradient(const matrix<T>& label) const {
+        if (this->row != label.row || this->col != label.col) {
+            report("matrix size mismatch", label);
+        }
+        // this->num must be softmax output (not raw logits)
         matrix<T> temp(this->row, this->col);
-        for (size_t i = 0; i < this->row; ++i) {
-            for (size_t j = 0; j < this->col; ++j) {
-                T si = this->num[i * this->col + i];
-                T sj = this->num[i * this->col + j];
-                if (i == j) {
-                    temp.num[i * temp.col + j] = sj * (1 - sj);
-                } else {
-                    temp.num[i * temp.col + j] = -si * sj;
-                }
-            }
+        #pragma omp parallel for
+        for (size_t i = 0; i < this->row * this->col; ++i) {
+            temp.num[i] = this->num[i] - label.num[i];
         }
         return temp;
     }
@@ -447,7 +443,7 @@ public:
         return temp;
     }
 
-    matrix l1_norm() const {
+    matrix l1_normalize() const {
         T sum = 0;
         #pragma omp parallel for reduction(+:sum)
         for (size_t i = 0; i < this->row * this->col; ++i)
@@ -459,7 +455,7 @@ public:
         return temp;
     }
 
-    matrix l2_norm() const {
+    matrix l2_normalize() const {
         T sum = 0;
         #pragma omp parallel for reduction(+:sum)
         for (size_t i = 0; i < this->row * this->col; ++i)

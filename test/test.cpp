@@ -33,7 +33,6 @@ int main() {
     std::cout << "relu:\n" << m.relu() << std::endl;
     std::cout << "relu.derivate:\n" << m.relu().relu_derivative() << std::endl;
     std::cout << "softmax:\n" << m.softmax() << std::endl;
-    std::cout << "softmax.derivate:\n" << m.softmax().softmax_derivative() << std::endl;
     std::cout << "softmax.sum: " << m.softmax().sum() << std::endl;
     std::cout << "m[3][1]: " << m[3][1] << std::endl;
 
