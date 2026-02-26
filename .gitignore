@@ -33,6 +33,7 @@
 
 # Data
 *.dat
+word2vec_embeddings.*
 
 # Directory
 .vscode
