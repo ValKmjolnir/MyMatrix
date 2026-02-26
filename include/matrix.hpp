@@ -15,9 +15,11 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <random>
+#include <type_traits>
 
 template<typename T>
 class matrix {
+    static_assert(std::is_floating_point<T>::value, "T must be floating point type");
 private:
     static constexpr size_t SMALL_MATRIX_THRESHOLD = 100;
 
@@ -330,6 +332,7 @@ public:
 public:
     template<typename _T>
     friend std::ostream& operator<<(std::ostream& out, const matrix<_T>& m) {
+        static_assert(std::is_floating_point<_T>::value, "_T must be floating point type");
         for (size_t i = 0; i < m.row; ++i)
             for (size_t j = 0; j < m.col; ++j)
                 out << m.num[i * m.col + j] << ((char)(j == m.col - 1)? '\n' : ' ');
@@ -338,6 +341,7 @@ public:
 
     template<typename _T>
     friend std::istream& operator>>(std::istream& in, matrix<_T>& m) {
+        static_assert(std::is_floating_point<_T>::value, "_T must be floating point type");
         for (size_t i = 0; i < m.row; ++i)
             for (size_t j = 0; j < m.col; ++j)
                 in >> m.num[i * m.col + j];
